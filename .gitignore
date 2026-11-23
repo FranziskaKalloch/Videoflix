@@ -1,0 +1,42 @@
+# Virtuelle Python-Umgebungen
+.venv/
+venv/
+env/
+
+# Lokale Konfiguration und Geheimnisse
+.env
+.env.*
+!.env.example
+
+# Python-Cache
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Lokale SQLite-Datenbanken
+db.sqlite3
+db.sqlite3-journal
+
+# Generierte Medien und gesammelte statische Dateien
+/media/
+/static/
+/staticfiles/
+
+# Logs
+*.log
+
+# Tests und Prüfwerkzeuge
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# macOS
+.DS_Store
+._*
+
+# Lokale Editor-Einstellungen
+.vscode/
+.idea/
