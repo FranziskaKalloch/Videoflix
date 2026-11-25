@@ -1,0 +1,31 @@
+Videoflix – bestätigte Projektvorgaben
+
+Zusammenarbeit
+- Der Benutzer lernt Django und schreibt normalerweise selbst Code. Abläufe und Zeilen einfach erklären; Methodenbeschreibungen auf Englisch.
+- Auf ausdrückliche Bitte Code liefern oder Änderungen eigenständig vornehmen.
+- Docker-Dateien einschließlich backend.entrypoint.sh, backend.Dockerfile und docker-compose.yml dürfen nicht verändert werden.
+
+Technik
+- Bestehendes Docker-Setup mit PostgreSQL, Redis, Django-RQ, Gunicorn und FFmpeg.
+- Vorlage: https://github.com/Developer-Akademie-Backendkurs/material.videoflix-docker-files
+- Medien im bestehenden Volume videoflix_media unter /app/media; keine zusätzlichen Unterordner für Originaluploads; FileField ohne upload_to.
+- Originalvideos werden zu HLS verarbeitet und später im Player abgespielt. HLS-Ausgabestruktur bislang nicht festgelegt.
+- E-Mail-Versand über iCloud-SMTP mit anwendungsspezifischem Passwort; Zugangsdaten ausschließlich in .env, keine Geheimnisse in Projektnotizen.
+
+Benutzer und API
+- Eigenes AbstractUser-Modell, AUTH_USER_MODEL = accounts.User.
+- Anmeldung mit eindeutiger E-Mail. Internes username-Feld für Kompatibilität mit unverändertem Startskript beibehalten.
+- Manager verwendet bei normalen Registrierungen die normalisierte E-Mail als username; explizit übergebener Superuser-Username bleibt erhalten.
+- Reguläre Benutzer standardmäßig inaktiv; Superuser aktiv, is_staff und is_superuser jeweils True.
+- Register-Request: email, password, confirmed_password; confirmed_password nicht speichern, Passwort über set_password hashen.
+- POST /api/register/ ohne Anmeldepflicht; HTTP 201 mit user.id, user.email und Aktivierungstoken laut Kursvorgabe.
+- Aktivierungstoken wird in der View erzeugt und an send_activation_mail(request, user, activation_token) weitergegeben.
+- Hilfsfunktion kodiert User-ID, baut Aktivierungslink und verschickt die E-Mail.
+- GET /api/activate/<uidb64>/<token>/ aktiviert das Konto; Aktivierungs-View noch nicht implementiert.
+- Token in Register-Response ist eine demonstrative Kursvorgabe; keine echte Postfachverifizierung möglich, wenn Aktivierungstoken direkt abrufbar ist.
+- Frontend soll später HTTP-only-Cookies verwenden. Keine Signals für den Register-Ablauf erforderlich.
+
+Reset am 24.11.2026
+- Benutzer hat das Löschen lokaler Testbenutzer ausdrücklich autorisiert.
+- Vor dem Reset: 2 Benutzer, davon 1 Superuser; keine Video-Datensätze.
+- Testbenutzer gelöscht; bestehende Migrationshistorie und Docker-Volumes bleiben bestehen.
