@@ -18,7 +18,7 @@ from rest_framework.test import APITestCase
     PASSWORD_HASHERS=["django.contrib.auth.hashers.MD5PasswordHasher"],
 )
 class PasswordResetAPITests(APITestCase):
-    """Exercise reset emails and password confirmation through the API."""
+    ''' Exercise reset emails and password confirmation through the API. '''
 
     old_password = "OriginalPassword123!"
     new_password = "ChangedPassword456!"
