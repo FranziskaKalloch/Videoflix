@@ -1,3 +1,5 @@
+from django.contrib.auth import authenticate # prüft die Zugangsdaten über Djangos Authentifizierungs Backend
+
 from rest_framework import serializers
 from ..models import User
 
@@ -33,3 +35,21 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
         
         return user
+    
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField(write_only=True)        
+    password = serializers.CharField(write_only=True, trim_whitespace=False)
+            
+    def validate(self, validated_data):
+        ''' Validate the login credentials and add the authenticated user to the validated data. '''
+        email = validated_data['email']
+        password = validated_data['password']
+            
+        user = authenticate(email=email, password=password)
+        
+        if user is None:
+            raise serializers.ValidationError("Ungültige Email Adresse oder falsches Passwort")
+        
+        validated_data['user'] = user # User wird in den geprüften Daten gespeichert
+        
+        return validated_data # Diesen Rückgabewert stellt der Serializer nach erfolgreicher Validierung als serializer.validated_data bereit.
