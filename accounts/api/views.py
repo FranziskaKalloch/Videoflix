@@ -10,7 +10,7 @@ from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .serializers import RegisterSerializer, LoginSerializer, PasswordResetSerializer
+from .serializers import RegisterSerializer, LoginSerializer, PasswordResetSerializer, PasswordConfirmSerializer
 from ..models import User
 from .utils import send_activation_mail, send_password_reset_mail
 import os
@@ -184,6 +184,34 @@ class PasswordResetView(APIView):  # Der Benutzer gibt seine E-Mail-Adresse ein.
             "detail": "An email has been sent to reset your password."
         }, status=status.HTTP_200_OK)
     
-class PasswordConfirmView(APIView):
-    # Der Benutzer sendet sein neues Passwort samt Bestätigung. Der Server prüft den Link und speichert das neue Passwort.
-    pass
+class PasswordConfirmView(APIView): # Der Benutzer sendet sein neues Passwort samt Bestätigung. Der Server prüft den Link und speichert das neue Passwort.
+    permission_classes = [AllowAny]
+    
+    def post(self, request, uidb64, token):
+        ''' Validate the password reset link and new passwords, then save the user's new password. '''
+        try:
+            uid = urlsafe_base64_decode(uidb64).decode() 
+            user = User.objects.get(pk=uid) # Benutzer suchen
+        except (ValueError, TypeError, UnicodeDecodeError, User.DoesNotExist):
+            return Response(
+                {"error": "Ungültiger Passwort-Reset-Link."
+                }, 
+                status=status.HTTP_400_BAD_REQUEST
+                )
+        token_is_valid = default_token_generator.check_token(user, token) # liefert True oder False zurück
+        
+        if not token_is_valid:
+            return Response({"error": "Ungültiger oder abgelaufener Reset-Token.“"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer = PasswordConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        new_password = serializer.validated_data["new_password"]
+        user.set_password(new_password) # Diese Methode erstellt den Passwort-Hash. 
+        user.save()
+        
+        return Response({
+            "detail": "Your Password has been successfully reset."
+        })
+        
+        

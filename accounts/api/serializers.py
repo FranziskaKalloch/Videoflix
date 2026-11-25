@@ -67,3 +67,20 @@ class PasswordResetSerializer(serializers.Serializer):
             raise serializers.ValidationError("Ein Benutzer mit dieser Email existiert nicht")
         
         return validated_data
+    
+class PasswordConfirmSerializer(serializers.Serializer):
+    new_password = serializers.CharField(write_only=True, trim_whitespace=False)
+    confirm_password = serializers.CharField(write_only=True, trim_whitespace=False)
+    
+    def validate(self, data):
+        ''' Validate that the passwords match and meet the minimum length requirement. '''
+        new_password = data['new_password']
+        confirm_password = data['confirm_password']
+        
+        if new_password != confirm_password:
+            raise serializers.ValidationError({"error": "Passwörter stimmen nicht überein"})
+        
+        if len(new_password) < 8:
+            raise serializers.ValidationError("Das Passwort muss mindestens 8 Zeichen lang sein")
+        
+        return data
