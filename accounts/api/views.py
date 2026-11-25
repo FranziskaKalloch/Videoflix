@@ -5,8 +5,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
 
-from .serializers import RegisterSerializer
+from .serializers import RegisterSerializer, LoginSerializer
 from ..models import User
 from .utils import send_activation_mail
 
@@ -56,3 +57,57 @@ class ActivationView(APIView):
         return Response({
             "message": "Account successfully activated."
         }, status=status.HTTP_200_OK)
+        
+
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        ''' Authenticate the user, set JWT access and refresh tokens as HttpOnly cookies, and return the user details. '''
+        serializer = LoginSerializer(data=request.data) # email und password werden an den Serializer übergeben
+        serializer.is_valid(raise_exception=True) # hier werden die Felder mit der validate() Methode geprüft
+        user = serializer.validated_data['user'] # Benutzer wird ausgelesen
+        
+        refresh_token = RefreshToken.for_user(user) # erzeugt einen refresh Token
+        access_token = str(refresh_token.access_token) # über den RefreshToken erhält man den zugehörigen access token | Der Access-Token authentifiziert spätere API-Anfragen. Der länger gültige Refresh-Token ermöglicht es, einen neuen Access-Token anzufordern.
+        
+        response = Response({
+                    "detail": "Login successful",
+                    "user": {
+                        "id": user.id,
+                        "username": user.email
+                    }
+                }, status=status.HTTP_200_OK)
+        
+        response.set_cookie(
+            key="access_token", # Name des Cookies, unter dem der Browser es speichert und bei Requests mitsendet
+            value=access_token,  # Der eigentliche Inhalt (hier der JWT-Access-Token als String)
+            httponly=True, # Schutz vor XSS: JavaScript im Browser (document.cookie) kann das Cookie nicht auslesen
+            secure=True,  # Erzwingt HTTPS-Übertragung
+            samesite="Lax", # CSRF-Schutz: Cookie wird bei normalen Navigationen mitgesendet
+            # max_age=300,  # Lebensdauer des Cookies in Sekunden (300 Sekunden = 5 Minuten); danach löscht der Browser das Cookie automatisch
+            )
+        response.set_cookie(
+            key="refresh_token",
+            value=str(refresh_token),
+            httponly=True,
+            secure=True,
+            samesite="Lax",
+            
+        )
+        
+        return response
+        
+        
+
+class LogoutView(APIView):
+    pass
+
+# class LogoutView(APIView):
+#    def post(self, request):
+#        try:
+#            token = RefreshToken(request.data["refresh"])
+#            token.blacklist()
+#            return Response(status=205)
+#        except Exception:
+#            return Response(status=400)
