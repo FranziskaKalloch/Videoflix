@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'django_rq',
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'accounts.apps.AccountsConfig',
     'video_app.apps.VideoAppConfig',
 ]

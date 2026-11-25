@@ -6,6 +6,7 @@ class CustomUserManager(BaseUserManager):
         if not email:
             raise ValueError("Die E-Mail Adresse muss angegeben werden")
         email = self.normalize_email(email)
+        extra_fields.setdefault("username", email) # Bei einer normalen Registrierung wird die E-Mail auch als Benutzername eingetragen. Wenn die Entrypoint bereits einen Benutzernamen übergibt, bleibt dieser erhalten.
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -29,7 +30,7 @@ class CustomUserManager(BaseUserManager):
 class User(AbstractUser):
     email = models.EmailField(unique=True) # Anmeldefeld
     is_active = models.BooleanField(default=False)
-    username = None # entfernt das Feld aus dem Model
+    username = models.CharField(max_length=254, unique=True)
     
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = [] # Email und Passwort sind automatisch Pflicht

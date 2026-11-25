@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 
 from .serializers import RegisterSerializer, LoginSerializer
 from ..models import User
@@ -99,15 +100,26 @@ class LoginView(APIView):
         return response
         
         
-
 class LogoutView(APIView):
-    pass
-
-# class LogoutView(APIView):
-#    def post(self, request):
-#        try:
-#            token = RefreshToken(request.data["refresh"])
-#            token.blacklist()
-#            return Response(status=205)
-#        except Exception:
-#            return Response(status=400)
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        ''' Blacklist the refresh token, delete the authentication cookies, and return a logout confirmation. '''
+        try:
+            refresh_token = request.COOKIES.get("refresh_token")
+            if not refresh_token:
+                return Response({"error": "Refresh Token fehlt"}, status=status.HTTP_400_BAD_REQUEST)
+            token = RefreshToken(refresh_token)     
+            token.blacklist()
+            
+            response =  Response({
+                "detail": "Logout successful! All tokens will be deleted. Refresh token is now invalid."
+                }, status=status.HTTP_200_OK)
+            
+            response.delete_cookie("access_token") # Die Methode ergänzt die Antwort um einen abgelaufenen Cookie. Sobald der Browser die Antwort erhält, entfernt er den entsprechenden gespeicherten Cookie.
+            response.delete_cookie("refresh_token")
+            
+            return response
+            
+        except TokenError:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
