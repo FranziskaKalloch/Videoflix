@@ -6,7 +6,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from .serializers import RegisterSerializer, LoginSerializer
 from ..models import User
@@ -123,3 +125,41 @@ class LogoutView(APIView):
             
         except TokenError:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+class CustomTokenRefreshView(TokenRefreshView):
+    
+    def post(self, request, *args, **kwargs):
+        ''' Validate the refresh token from the cookie, issue a new access token, and set it as an HttpOnly cookie. '''
+        refresh_token = request.COOKIES.get("refresh_token")
+        
+        if not refresh_token: # mit if not wird auch ein leerer Coockie wert zu fehler 400 geführt
+            return Response({"error": "Refresh Token fehlt"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer = self.get_serializer(data = {
+            "refresh": refresh_token
+        })
+        
+        # Validierung des Refresh-Tokens - dabei wird der neue Access Token erzeugt
+        try:
+            serializer.is_valid(raise_exception=True)
+        except TokenError as error: # hier wird ein ungültiger, abgelaufener der gesperrte Token abgefangen
+            raise InvalidToken(str(error)) # wird mit 401 Antwort übersetzt , raise löst die Ausnahme au, beendet die Verarbeitung und führt 401 aus
+        
+        # Neuen Access Token holen - der befindet sich jetzt in den Validierten Daten
+        access_token = serializer.validated_data["access"] # Der geerbte Serializer legt den neuen Token unter serializer.validated_data["access"] ab.
+        
+        response = Response({
+            "detail": "Token refreshed",
+            "access": new_access_token
+        }, status=status.HTTP_200_OK)
+        
+        response.set_cookie(
+            key="access_token", 
+            value=access_token,  
+            httponly=True, 
+            secure=True,  
+            samesite="Lax", 
+        )
+        # nur der access_token wird erneuert. Der vorhandene Refresh Token bleibt vorhanden
+        
+        return response
