@@ -32,3 +32,28 @@ def send_activation_mail(request, user, activation_token):
         recipient_list=recipient_list,
         fail_silently=False
     )
+    
+def send_password_reset_mail(request, user, reset_token):
+    ''' Build a password reset link and send it to the user's email address. '''
+    uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+    
+    reset_path = reverse("password-confirm", kwargs={'uidb64': uidb64, 'token': reset_token}) # reverse() baut den Pfad mit Benutzer-ID und Token.
+    reset_url = request.build_absolute_uri(reset_path) # build_absolute_uri() ergänzt Protokoll und Domain.
+    
+    from_email = settings.DEFAULT_FROM_EMAIL
+    recipient_list = [user.email]
+    
+    subject = 'Bitte ändere dein Passwort'
+    message = (
+        f"Bitte klicke auf den folgenden Link, um dein Passwort zu ändern:\n"
+        f"{reset_url}\n\n"
+        f"Falls du keine Passwortänderung angefordert hast, kannst du diese E-Mail ignorieren."
+    )
+        
+    send_mail(
+        subject = subject,
+        message = message,
+        from_email=from_email,
+        recipient_list=recipient_list,
+        fail_silently=False
+    )

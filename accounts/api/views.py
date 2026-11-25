@@ -1,4 +1,4 @@
-from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.tokens import default_token_generator, PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_decode
 
 from rest_framework.views import APIView
@@ -10,9 +10,10 @@ from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .serializers import RegisterSerializer, LoginSerializer
+from .serializers import RegisterSerializer, LoginSerializer, PasswordResetSerializer
 from ..models import User
 from .utils import send_activation_mail
+import os
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
@@ -164,5 +165,19 @@ class CustomTokenRefreshView(TokenRefreshView):
         
         return response
     
-class PasswordResetView(APIView):
-    # Der Benutzer gibt seine E-Mail-Adresse ein. Der Server erstellt einen Reset-Token und verschickt einen Link.
+class PasswordResetView(APIView):  # Der Benutzer gibt seine E-Mail-Adresse ein. Der Server erstellt einen Reset-Token und verschickt einen Link.
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        '''  '''
+        serializer = PasswordResetSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True) # Prüfung übernimmt der Serializer, man könnte auch hier prüfen: email = request.data['email']; user = User.objects.filter(email__iexact=email).first()
+        
+        email = serializer.validated_data['email']
+        user = User.objects.get(email=email)
+        
+        reset_token = default_token_generator.make_token(user)
+    
+class PasswordConfirmView(APIView):
+    # Der Benutzer sendet sein neues Passwort samt Bestätigung. Der Server prüft den Link und speichert das neue Passwort.
+    pass
