@@ -150,7 +150,7 @@ class CustomTokenRefreshView(TokenRefreshView):
         
         response = Response({
             "detail": "Token refreshed",
-            "access": new_access_token
+            "access": access_token
         }, status=status.HTTP_200_OK)
         
         response.set_cookie(
@@ -163,3 +163,6 @@ class CustomTokenRefreshView(TokenRefreshView):
         # nur der access_token wird erneuert. Der vorhandene Refresh Token bleibt vorhanden
         
         return response
+    
+class PasswordResetView(APIView):
+    # Der Benutzer gibt seine E-Mail-Adresse ein. Der Server erstellt einen Reset-Token und verschickt einen Link.

@@ -53,3 +53,17 @@ class LoginSerializer(serializers.Serializer):
         validated_data['user'] = user # User wird in den geprüften Daten gespeichert
         
         return validated_data # Diesen Rückgabewert stellt der Serializer nach erfolgreicher Validierung als serializer.validated_data bereit.
+
+class PasswordResetSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    
+    def validate(self, validated_data):
+        ''' Validate that a user with the provided email address exists. '''
+        email = validated_data['email']
+        
+        user_exists = User.objects.filter(email=email).exists()
+        
+        if not user_exists:
+            raise serializers.ValidationError("Ein Benutzer mit dieser Email existiert nicht")
+        
+        return validated_data
