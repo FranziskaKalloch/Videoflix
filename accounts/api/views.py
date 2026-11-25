@@ -12,7 +12,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from .serializers import RegisterSerializer, LoginSerializer, PasswordResetSerializer
 from ..models import User
-from .utils import send_activation_mail
+from .utils import send_activation_mail, send_password_reset_mail
 import os
 
 class RegisterView(APIView):
@@ -169,7 +169,7 @@ class PasswordResetView(APIView):  # Der Benutzer gibt seine E-Mail-Adresse ein.
     permission_classes = [AllowAny]
     
     def post(self, request):
-        '''  '''
+        ''' Validate the email address, generate a password reset token, and send a password reset email. '''
         serializer = PasswordResetSerializer(data=request.data)
         serializer.is_valid(raise_exception=True) # Prüfung übernimmt der Serializer, man könnte auch hier prüfen: email = request.data['email']; user = User.objects.filter(email__iexact=email).first()
         
@@ -177,6 +177,12 @@ class PasswordResetView(APIView):  # Der Benutzer gibt seine E-Mail-Adresse ein.
         user = User.objects.get(email=email)
         
         reset_token = default_token_generator.make_token(user)
+        
+        send_password_reset_mail(request, user, reset_token)
+        
+        return Response({
+            "detail": "An email has been sent to reset your password."
+        }, status=status.HTTP_200_OK)
     
 class PasswordConfirmView(APIView):
     # Der Benutzer sendet sein neues Passwort samt Bestätigung. Der Server prüft den Link und speichert das neue Passwort.

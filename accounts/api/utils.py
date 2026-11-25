@@ -37,7 +37,7 @@ def send_password_reset_mail(request, user, reset_token):
     ''' Build a password reset link and send it to the user's email address. '''
     uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
     
-    reset_path = reverse("password-confirm", kwargs={'uidb64': uidb64, 'token': reset_token}) # reverse() baut den Pfad mit Benutzer-ID und Token.
+    reset_path = reverse("confirm-password", kwargs={'uidb64': uidb64, 'token': reset_token}) # reverse() baut den Pfad mit Benutzer-ID und Token.
     reset_url = request.build_absolute_uri(reset_path) # build_absolute_uri() ergänzt Protokoll und Domain.
     
     from_email = settings.DEFAULT_FROM_EMAIL
